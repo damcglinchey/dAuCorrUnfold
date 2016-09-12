@@ -4,6 +4,17 @@ from ROOT import TFile, TH1, TH2D, TCanvas, gStyle
 from h2np import h2a, binctrs
 
 
+# pT bin edges
+ptbins = np.array([0.25, 0.50, 0.75, 1.00, 1.50, 2.00, 3.00, 5.00])
+
+# pT bin width
+ptw = np.diff(ptbins)
+
+# pT bin center
+ptx = ptbins[:-1] + ptw / 2
+
+# number of pT bins
+npt = len(ptx)
 
 
 
