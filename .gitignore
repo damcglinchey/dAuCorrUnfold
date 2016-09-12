@@ -1,2 +1,5 @@
 # ignore python build files
 *.pyc
+
+# ignore pdfs
+*.pdf
