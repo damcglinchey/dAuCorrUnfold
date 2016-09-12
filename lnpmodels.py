@@ -35,8 +35,11 @@ def mvn(data, pred):
     pred: predicted values
     Currently assumes data points are independent (diagonal covariance).
     '''
-    icov_data = np.diag(1. / (data[:, 1] ** 2))
-    return lngauss(data[:, 0], pred, icov_data)
+    # icov_data = np.diag(1. / (data[:, 1] ** 2))
+    # Scale everything to by the error to avoid machine precision problems
+    # in lngauss()
+    icov_data = np.diag(np.full(len(data[:, 0]), 1.))
+    return lngauss(data[:, 0] / data[:, 1], pred / data[:, 1], icov_data)
 
 
 
@@ -49,8 +52,7 @@ def lncorr(data, cn):
           column 2 contains errors
     cn: correlation coefficients
     '''
-    pred = cf.corr(data[:, 0], cn)
-    return mvn(data[:, 1:], pred)
+    return mvn(data[:, 1:], cf.corr(data[:, 0], cn))
 
 
 def lndata(vn, data, xlim, nv, nn):
@@ -60,17 +62,9 @@ def lndata(vn, data, xlim, nv, nn):
     if np.any(vn < xlim[:, 0]) or np.any(vn > xlim[:, 1]):
         return -np.inf
 
-    vn = vn.reshape((nv, nn))
-    llsum = 0
-    # BBCS--FVTXS (see unfold.py)
-    llsum += lncorr(data[0], vn[0, :] * vn[1, :])
-    # CNT--BBCS (see unfold.py)
-    for ipt in range(ui.npt):
-        llsum += lncorr(data[ipt + 1], vn[0, :] * vn[2 + ipt, :])
-    # CNT--FVTXS (see unfold.py)
-    for ipt in range(ui.npt):
-        llsum += lncorr(data[ipt + ui.npt + 1], vn[1, :] * vn[2 + ipt, :])
-
+    vn = vn.reshape((nn, nv)).T
+    cn = ui.calccn(vn, len(data))
+    llsum = np.sum(np.array([lncorr(data[i], cn[i, :]) for i in range(len(data))]))
     return llsum
 
 
