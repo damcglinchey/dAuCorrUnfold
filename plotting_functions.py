@@ -6,7 +6,9 @@ from matplotlib.patches import Rectangle
 from matplotlib.patches import Patch
 
 
-def plot_corr(corr, fcorr, corrname='', energy=200, figname="corr.pdf"):
+def plot_corr(corr, fcorr, 
+              corrname='', energy=200, ll=None,
+              figname="corr.pdf"):
     '''
     Plot two particle correlation vs delta phi
     '''
@@ -32,13 +34,16 @@ def plot_corr(corr, fcorr, corrname='', energy=200, figname="corr.pdf"):
         ax.plot(corr[:, 0], fcorr[:, 3], 
                 ls='--', color='darkgreen', label=r'$1+2C_3\cos(3\Delta\phi)$')
         ax.plot(corr[:, 0], fcorr[:, 0], 
-                ls='--', color='black', label='Total')
+                ls='--', color='black', label=r'$1+\sum_{n=1}^{4}2C_n\cos(n\Delta\phi)$')
 
     # Labels
     ax.legend(fontsize='10', loc=2)
     en = r'd+Au $\sqrt{s_{NN}}=$' + '{}'.format(energy) + ' GeV'
     ax.text(0.55, 0.1, en,
             fontsize=12, transform=ax.transAxes)
+    if ll is not None:
+        ax.text(0.06, 0.65, 'LL={:.2f}'.format(ll),
+                fontsize=12, transform=ax.transAxes)
 
     fig.savefig(figname)
     plt.close(fig)

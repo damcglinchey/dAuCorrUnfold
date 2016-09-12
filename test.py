@@ -2,14 +2,18 @@ import numpy as np
 import unfold_input as ui
 import plotting_functions as pf
 import corr_funcs as cf
+import lnpmodels as lnp
 
 
+# get correlation data from file
 corr_FVTXNFVTXS = ui.corrdata('dphi_corr_dAu200_FVTXNFVTXS_c0')
-corr_CNTFVTXS = ui.corrdata('dphi_corr_dAu200_CNTFVTXS_c0')
-corr_CNTFVTXN = ui.corrdata('dphi_corr_dAu200_CNTFVTXN_c0')
+print('FVTXN--FVTXS correlation data:{}'.format(corr_FVTXNFVTXS))
 
+# trail cn values
 cn_FVTXNFVTXS = np.array([-0.0031, 0.0018, 0.0])
+print('Cn values:{}'.format(cn_FVTXNFVTXS))
 
+# get correlation functions given cn values
 fcorr_FVTXNFVTXS = cf.corr(corr_FVTXNFVTXS[:, 0], cn_FVTXNFVTXS)
 
 fc1_FVTXNFVTXS = cf.ci(corr_FVTXNFVTXS[:, 0], cn_FVTXNFVTXS[0], 1)
@@ -20,12 +24,17 @@ fcn_FVTXNFVTXS = np.vstack((fcorr_FVTXNFVTXS,
                             fc1_FVTXNFVTXS, 
                             fc2_FVTXNFVTXS,
                             fc3_FVTXNFVTXS)).T
-
-print corr_FVTXNFVTXS
 print fcorr_FVTXNFVTXS
 print fcn_FVTXNFVTXS
 
-pf.plot_corr(corr_FVTXNFVTXS, fcn_FVTXNFVTXS, "FVTXN--FVTXS", 200,
+# Get likelihood values
+ll = lnp.lncorr(corr_FVTXNFVTXS, cn_FVTXNFVTXS)
+print('ll:{}'.format(ll))
+
+pf.plot_corr(corr_FVTXNFVTXS, fcn_FVTXNFVTXS, 
+             corrname="FVTXN--FVTXS", 
+             energy=200,
+             ll=ll,
              figname="test.pdf")
 
 
