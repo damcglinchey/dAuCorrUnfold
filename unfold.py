@@ -8,12 +8,13 @@ import corr_funcs as cf
 import lnpmodels as lnp
 
 
-def unfold(energy=200,
+def unfold(step=1,
+           energy=20,
            rootfile='correlations.root',
-           outdir='test',
+           outdir='dAu20',
            nwalkers=500,
-           nburnin=100,
-           nsteps=100):
+           nburnin=500,
+           nsteps=500):
     '''
     Perform the unfolding
     energy   := Collision energy [200, 62, 39, 20]
@@ -29,8 +30,8 @@ def unfold(energy=200,
     #--------------------------------------------------------------------------
 
     # Output locations
-    pdfdir = '{}/pdfs/'.format(outdir)
-    csvdir = '{}/csv/'.format(outdir)
+    pdfdir = '{}/pdfs/{}/'.format(outdir, step + 1)
+    csvdir = '{}/csv/{}/'.format(outdir, step + 1)
 
     if not os.path.isdir(pdfdir):
         os.makedirs(pdfdir)
@@ -40,6 +41,7 @@ def unfold(energy=200,
     
     # Print running conditions
     print("--------------------------------------------")
+    print(" step          : {}".format(step))
     print(" energy        : {}".format(energy))
     print(" rootfile      : {}".format(rootfile))
     print(" nwalkers      : {}".format(nwalkers))
@@ -51,39 +53,28 @@ def unfold(energy=200,
 
 
     # Get the Correlation data
-    corr_BBCSFVTXS = ui.corrdata('dphi_corr_dAu{}_BBCSFVTXS_c0'.format(energy))
-    corr_CNTBBCS = [ui.corrdata('dphi_corr_dAu{}_CNTBBCS_c0_pt{}'.format(energy, i)) for i in range(ui.npt)]
-    corr_CNTFVTXS = [ui.corrdata('dphi_corr_dAu{}_CNTFVTXS_c0_pt{}'.format(energy, i)) for i in range(ui.npt)]
+    datalist, labellist = ui.getdata(energy, rootfile)
 
-
-    # Wrap everything into a single data list
-    # data list:
-    #  [0]          := BBCS--FVTXS
-    #  [1:ui.npt+1] := CNT--BBCS in pT bins
-    #  [ui.npt+1:]  := CNT--FVTXS in pT bins
-    datalist = [corr_BBCSFVTXS]
-    [datalist.append(m) for m in corr_CNTBBCS]                         
-    [datalist.append(m) for m in corr_CNTFVTXS]                         
-    print(len(datalist))
-
-    # Setup the initial vn guesses
-    # vn_ini (and all parameter lists) nx3 matrix
-    # [:, 0] := v_1
-    # [:, 1] := v_2
-    # [:, 2] := v_3
-    # [0, :]           := v_n BBCS
-    # [1, :]           := v_n FVTXS
-    # [2:ui.ncpt+2, :] := v_n CNT in pT bins
-    vn_ini = np.vstack((np.full(2 + ui.npt, 0.2),
-    np.full(2 + ui.npt, 0.1),
-    np.full(2 + ui.npt, 0.02))).T
+    # Get the initial parameter guesses
+    if step == 0:
+        vn_ini = ui.vnini()
+    else:
+        csvi = '{}/csv/{}/pq.csv'.format(outdir, step)
+        vn_ini = np.loadtxt(csvi, delimiter=',')[:, 0] # Previous step
+        vn_ini = vn_ini.reshape((3, 9)).T # Need to automate this ...
     print(vn_ini.shape)
     print(vn_ini)
+
+    # Calculate the Cn's from initial vn's
+    cn_ini = ui.calccn(vn_ini, len(datalist))
+    print(cn_ini.shape)
+    print(cn_ini)
+
 
     nv = vn_ini.shape[0]
     nn = vn_ini.shape[1]
 
-    vn_ini = vn_ini.flatten()
+    vn_ini = vn_ini.T.flatten()
     ndim = len(vn_ini)
     print('ndim = {}'.format(ndim))
 
@@ -154,7 +145,50 @@ def unfold(energy=200,
     # Collect the results
     #--------------------------------------------------------------------------
 
+    # calculate cn's
+    vn_final = pq[:, 0].reshape((nn, nv)).T
+    cn_final = ui.calccn(vn_final, len(datalist))
+    ll_final = [lnp.lncorr(datalist[i], cn_final[i, :]) for i in range(len(datalist))]
+    fcorr_final = []
+    for idx, d in enumerate(datalist):
+        fcorr_final.append(np.vstack((cf.corr(d[:, 0], cn_final[idx]),
+                                      cf.ci(d[:, 0], cn_final[idx][0], 1),
+                                      cf.ci(d[:, 0], cn_final[idx][1], 2),
+                                      cf.ci(d[:, 0], cn_final[idx][2], 3))).T)
+                  
+    v2_pt = pq[4+ui.npt:2*(2+ui.npt), :]
+    v3_pt = pq[2*(2+ui.npt)+2:, :]
 
+
+    # for plotting after the first iteration
+    if step > 0:
+        parlimits = np.vstack((np.full(ndim, -0.1), np.full(ndim, 0.2))).T
+
+
+    #--------------------------------------------------------------------------
+    # Print
+    #--------------------------------------------------------------------------
+
+    # Plot unfold diagnostics
+    pf.plot_lnprob(sampler.flatlnprobability, pdfdir + 'lnprob.pdf')
+    pf.plot_lnp_steps(sampler, nburnin, pdfdir + 'lnprob-vs-step.pdf')
+    pf.plot_post_marg(samples, parlimits, pdfdir + 'posterior.pdf')
+
+    # Plot correlation functions
+    [pf.plot_corr(datalist[i], fcorr_final[i], labellist[i], energy, ll_final[i], pdfdir + 'corr_{}.pdf'.format(i)) for i in range(len(datalist))]
+
+    # Plot vn vs pT
+    pf.plot_vnpt(v2_pt, 2, energy, figname=pdfdir + 'v2_pt.pdf')
+    pf.plot_vnpt(v3_pt, 3, energy, figname=pdfdir + 'v3_pt.pdf')
+
+    # Write out the unfolded vn values
+    np.savetxt("{}pq.csv".format(csvdir), pq, delimiter=",")
+
+    #--------------------------------------------------------------------------
+    # Done
+    #--------------------------------------------------------------------------
+    print('\nDone!\n')
+    return
 if __name__ == '__main__':
     # np.set_printoptions(precision=3)
 
