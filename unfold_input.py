@@ -26,7 +26,15 @@ idx = {'bbcs': np.array((0, npt+2, 2*(npt+2))),
        'v3': np.arange(2*(npt+2), 3*(npt+2)),
        'cntv1': np.arange(2, npt+2),
        'cntv2': np.arange(npt+4, 2*(npt+2)),
-       'cntv3': np.arange(2*(npt+2)+2, 3*(npt+2))}
+       'cntv3': np.arange(2*(npt+2)+2, 3*(npt+2)),
+       'bbcsfvtxs': np.array((0)),
+       'cntbbcs': np.arange(1, npt+1),
+       'cntfvtxs': np.arange(npt+1, 2*npt+1)}
+
+# Dimensions for vn and datalist
+nn = 3 # number of v_n orders (1, 2, 3)
+nv = 9 # number of independent v_i's 
+ndim = nn * nv # total number of parameters
 
 def corrdata(corr, file='correlations.root'):
     '''
@@ -83,13 +91,13 @@ def vnini():
     [1, :]           := v_n FVTXS
     [2:ui.ncpt+2, :] := v_n CNT in pT bins
     '''
-    # vn_ini = np.vstack((np.full(2 + npt, 0.2),
-    # np.full(2 + npt, 0.1),
-    # np.full(2 + npt, 0.02))).T
+    vn_ini = np.vstack((np.full(2 + npt, 0.2),
+    np.full(2 + npt, 0.1),
+    np.full(2 + npt, 0.02))).T
 
-    csvi = 'dAu200/csv/4/pq.csv'
-    vn_ini = np.loadtxt(csvi, delimiter=',')[:, 0] # Previous step
-    vn_ini = vn_ini.reshape((3, 9)).T # Need to automate this ...
+    # csvi = 'dAu200/csv/4/pq.csv'
+    # vn_ini = np.loadtxt(csvi, delimiter=',')[:, 0] # Previous step
+    # vn_ini = vn_ini.reshape((nn, nv)).T # Need to automate this ...
 
     return vn_ini
 
