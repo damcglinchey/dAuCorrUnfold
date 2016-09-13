@@ -284,9 +284,9 @@ def plot_triangle_vn(d, figname='posterior-triangle-vn.pdf', plotcor=True):
     fig.text(0.49, 0.01, r'$v_2$', fontsize=100, color=colors['v2'])
     fig.text(0.82, 0.01, r'$v_3$', fontsize=100, color=colors['v3'])
 
-    fig.text(0.005, 0.16, r'$v_1$', fontsize=100, color=colors['v1'])
+    fig.text(0.005, 0.82, r'$v_1$', fontsize=100, color=colors['v1'])
     fig.text(0.005, 0.49, r'$v_2$', fontsize=100, color=colors['v2'])
-    fig.text(0.005, 0.82, r'$v_3$', fontsize=100, color=colors['v3'])
+    fig.text(0.005, 0.16, r'$v_3$', fontsize=100, color=colors['v3'])
 
 
     ax_full.arrow(0.05, (1.0 - trdim/dim),
