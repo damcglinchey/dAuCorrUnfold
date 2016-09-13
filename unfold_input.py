@@ -16,7 +16,17 @@ ptx = ptbins[:-1] + ptw / 2
 # number of pT bins
 npt = len(ptx)
 
-
+# various useful indecies for vn results
+# This needs to match the layout used below!!
+idx = {'bbcs': np.array((0, npt+2, 2*(npt+2))),
+       'fvtxs': np.array((1, npt+3, 2*(npt+2)+1)),
+       'cnt': np.array((np.arange(2,npt+2), np.arange(npt+4, 2*(npt+2)), np.arange(2*(npt+2)+2, 3*(npt+2)))).flatten(),
+       'v1': np.arange(0, npt+2),
+       'v2': np.arange(npt+2, 2*(npt+2)),
+       'v3': np.arange(2*(npt+2), 3*(npt+2)),
+       'cntv1': np.arange(2, npt+2),
+       'cntv2': np.arange(npt+4, 2*(npt+2)),
+       'cntv3': np.arange(2*(npt+2)+2, 3*(npt+2))}
 
 def corrdata(corr, file='correlations.root'):
     '''
