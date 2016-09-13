@@ -8,7 +8,7 @@ import corr_funcs as cf
 import lnpmodels as lnp
 
 
-def unfold(step=1,
+def unfold(step=3,
            energy=20,
            rootfile='correlations.root',
            outdir='dAu20',
@@ -156,13 +156,9 @@ def unfold(step=1,
                                       cf.ci(d[:, 0], cn_final[idx][1], 2),
                                       cf.ci(d[:, 0], cn_final[idx][2], 3))).T)
                   
-    v2_pt = pq[4+ui.npt:2*(2+ui.npt), :]
-    v3_pt = pq[2*(2+ui.npt)+2:, :]
+    v2_pt = pq[ui.idx['cntv2'], :]
+    v3_pt = pq[ui.idx['cntv3'], :]
 
-
-    # for plotting after the first iteration
-    if step > 0:
-        parlimits = np.vstack((np.full(ndim, -0.1), np.full(ndim, 0.2))).T
 
 
     #--------------------------------------------------------------------------
@@ -173,6 +169,12 @@ def unfold(step=1,
     pf.plot_lnprob(sampler.flatlnprobability, pdfdir + 'lnprob.pdf')
     pf.plot_lnp_steps(sampler, nburnin, pdfdir + 'lnprob-vs-step.pdf')
     pf.plot_post_marg(samples, parlimits, pdfdir + 'posterior.pdf')
+    # pf.plot_post_marg_triangle(samples, pdfdir + 'posterior-triangle.pdf')
+
+    pf.plot_vnpt_prob(samples[:, ui.idx['cntv2']], 2, energy,
+                      pdfdir + 'v2pt-prob.pdf')
+    pf.plot_vnpt_prob(samples[:, ui.idx['cntv3']], 3, energy,
+                      pdfdir + 'v3pt-prob.pdf')
 
     # Plot correlation functions
     [pf.plot_corr(datalist[i], fcorr_final[i], labellist[i], energy, ll_final[i], pdfdir + 'corr_{}.pdf'.format(i)) for i in range(len(datalist))]
@@ -180,9 +182,13 @@ def unfold(step=1,
     # Plot vn vs pT
     pf.plot_vnpt(v2_pt, 2, energy, figname=pdfdir + 'v2_pt.pdf')
     pf.plot_vnpt(v3_pt, 3, energy, figname=pdfdir + 'v3_pt.pdf')
-
+    pf.plot_v2v3pt(v2_pt, v3_pt, energy, figname=pdfdir + 'v2v3_pt.pdf')
     # Write out the unfolded vn values
     np.savetxt("{}pq.csv".format(csvdir), pq, delimiter=",")
+
+    # Plot triangle plot last ..
+    if step > 0:
+        pf.plot_triangle_vn(samples, pdfdir + 'posterior-triangle-vn.pdf')
 
     #--------------------------------------------------------------------------
     # Done
